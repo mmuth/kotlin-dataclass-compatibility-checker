@@ -1,0 +1,1 @@
+# kotlin-dataclass-compatibility-checker
