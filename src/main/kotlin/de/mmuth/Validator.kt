@@ -20,7 +20,7 @@ class Validator {
         againstInputClass.members.forEach { member ->
             // all members need to exist in the input
             if (inputClass.members.none { it.name == member.name }) {
-                violations.add("Member '${member.name}' does not exist in input class")
+                violations.add("Member '${member.name}' was removed")
             } else {
                 // their types need to match or might be narrower considering nullability
                 // "against class" can agree with null, but "input class" will always deliver a value => is OK
@@ -82,10 +82,9 @@ class Validator {
 
     private fun validateEnumValues(inputClass: KotlinEnumDescripton, againstInputClass: KotlinEnumDescripton): Set<Violation> {
         val violations = mutableSetOf<Violation>()
-        // input may not add new values that are not known to the baseline ("againstInput")
-        inputClass.values.forEach { value ->
-            if (againstInputClass.values.none { it == value })
-                violations.add("Enum '${inputClass.name}': value '$value' is not known to the baseline")
+        againstInputClass.values.forEach { value ->
+            if (inputClass.values.none { it == value })
+                violations.add("Enum '${inputClass.name}': value '$value' was removed")
         }
         return violations
     }
