@@ -10,25 +10,31 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URLClassLoader
 import kotlin.reflect.KProperty
+import kotlin.time.measureTime
 
 const val INPUT_FILE_BUILD_DIR = "build/classes/input"
-const val AGAINST_INPUT_FILE_BUILD_DIR = "build/classes/input"
+const val AGAINST_INPUT_FILE_BUILD_DIR = "build/classes/against-input"
 
-class ExternalClassLoader(private val inputFilePath: String, private val againstInputFilePath: String, private val usePreCompiledClasses: Boolean) {
+class ExternalClassLoader(
+    private val inputFilePath: String,
+    private val againstInputFilePath: String,
+    private val usePreCompiledClasses: Boolean,
+    private val mainClassName: String? = null
+) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
     fun load(): Pair<KotlinValidatableDataClassDescription, KotlinValidatableDataClassDescription> {
         val inputClassLoader = compileKotlinClassFromRawFile(inputFilePath, INPUT_FILE_BUILD_DIR)
-        val inputClass = loadMainClass(inputFilePath, inputClassLoader)
+        val inputClass = loadMainClass(inputFilePath, inputClassLoader, mainClassName)
 
         val againstInputClassLoader = compileKotlinClassFromRawFile(againstInputFilePath, AGAINST_INPUT_FILE_BUILD_DIR)
-        val againstInputClass = loadMainClass(againstInputFilePath, againstInputClassLoader)
+        val againstInputClass = loadMainClass(againstInputFilePath, againstInputClassLoader, mainClassName)
         return Pair(inputClass, againstInputClass)
     }
 
-    private fun loadMainClass(filePath: String, classLoader: ClassLoader): KotlinValidatableDataClassDescription {
-        val mainClassName = File(filePath).nameWithoutExtension
+    private fun loadMainClass(filePath: String, classLoader: ClassLoader, specificMainClassName: String?): KotlinValidatableDataClassDescription {
+        val mainClassName = specificMainClassName ?: File(filePath).nameWithoutExtension
         val packageName = File(filePath).readText().substringAfter("package ").substringBefore("\n").trim()
         logger.info("Loading class $packageName.$mainClassName")
 
@@ -75,7 +81,6 @@ class ExternalClassLoader(private val inputFilePath: String, private val against
         if (!usePreCompiledClasses) {
             outputDir.mkdirs()
 
-            // TODO this does not work in the jar context yet
             val kotlinStdlib = File(System.getProperty("java.class.path").split(":").find { it.contains("kotlin-stdlib") } ?: "")
             if (!kotlinStdlib.exists()) {
                 throw CliktError("Error: Kotlin Standard Library not found at ${kotlinStdlib.absolutePath}")
@@ -88,11 +93,15 @@ class ExternalClassLoader(private val inputFilePath: String, private val against
                 destination = outputDir.absolutePath
             }
 
-            val exitCode = compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
-            compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
-            if (exitCode.code != 0) {
-                throw CliktError("Compilation failed with exit code: $exitCode")
+            val duration = measureTime {
+                val exitCode = compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
+                compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
+                if (exitCode.code != 0) {
+                    throw CliktError("Compilation failed with exit code: $exitCode")
+                }
             }
+
+            logger.info("Compilation took ${duration.inWholeMilliseconds} ms")
         }
 
         return URLClassLoader(arrayOf(outputDir.toURI().toURL()))

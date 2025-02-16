@@ -3,9 +3,5 @@ package com.testdata.somepackage
 data class MySimpleDataClass(
     val name: String,
     val count: Int,
-    val color: Color
+    val flag: Boolean
 )
-
-enum class Color {
-    RED, GREEN, BLUE, PURPLE
-}

@@ -1,6 +1,7 @@
 package de.mmuth
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
@@ -35,7 +36,15 @@ open class KotlinDataClassCompatibilityChecker : CliktCommand() {
         val loadedClasses = ExternalClassLoader(inputFilePath, againstInputFilePath, usePreCompiledClasses).load()
 
         logger.info("Main data class ${loadedClasses.first.fullyQualifiedName()} is validated against ${loadedClasses.second.fullyQualifiedName()}")
-        Validator().check(loadedClasses.first, loadedClasses.second)
+        val result = Validator().check(loadedClasses.first, loadedClasses.second)
+
+        if (result.isEmpty()) {
+            logger.info("Validation succeeded - no breaking changes found.")
+        } else {
+            logger.error("Breaking changes found:")
+            result.forEach { logger.error(it) }
+            throw CliktError("Validation failed.")
+        }
     }
 }
 

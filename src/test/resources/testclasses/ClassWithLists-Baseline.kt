@@ -1,6 +1,6 @@
-package com.testdata.anotherpackage
+package com.testdata.somepackage
 
-data class MySimpleDataClass(
+data class ClassWithLists(
     val name: String?,
     val count: Int,
     val flag: Boolean,
