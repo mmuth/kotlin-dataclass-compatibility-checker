@@ -14,7 +14,7 @@ class CompatibilityCheckerTest : DescribeSpec({
 
     describe("Validation will succeed for compatible changes") {
         it("simple consumers can use the fields they require (other types are equal)") {
-            val violations = validate("MySimpleDataClass-Valid-AddNewFields", "MySimpleDataClass-Baseline")
+            val violations = validate("SimpleDataClass-Valid-AddNewFields", "SimpleDataClass-Baseline")
             violations shouldHaveSize 0
         }
 
@@ -25,13 +25,23 @@ class CompatibilityCheckerTest : DescribeSpec({
     }
 
     describe("Validation will fail for incompatible changes") {
+        it("you can't remove a member that is expected on the other side") {
+            val violations = validate("SimpleDataClass-Invalid-RemoveField", "SimpleDataClass-Baseline")
+            violations.shouldContainExactly("Member 'count' does not exist in input class")
+        }
+
         it("you can't deliver null if the baseline does not accept it") {
             val violations = validate("ClassWithLists-Invalid-NullForNonNullableField", "ClassWithLists-Baseline")
-            violations.shouldContainExactly("Member 'count' types are not compatible: kotlin.Int vs. kotlin.Int?")
+            violations.shouldContainExactly("Member 'count' types are not compatible: kotlin.Int? vs. kotlin.Int")
+        }
+
+        it("will fail if the types of a member differ at all") {
+            val violations = validate("SimpleDataClass-Invalid-MemberTypeDoesNotMatch", "SimpleDataClass-Baseline")
+            violations.shouldContainExactly("Member 'count' types are not compatible: kotlin.Long vs. kotlin.Int")
         }
 
         it("an enum value needs to be added to the baseline first") {
-            val violations = validate("SimpleWithEnum-Invalid-AddedValueToExistingEnum", "SimpleWithEnum-Baseline")
+            val violations = validate("SimpleDataClassWithEnum-Invalid-AddedValueToExistingEnum", "SimpleDataClassWithEnum-Baseline")
             violations.shouldContainExactly("Enum 'Color': value 'CYAN' is not known to the baseline")
         }
     }

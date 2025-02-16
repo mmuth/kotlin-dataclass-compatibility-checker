@@ -1,6 +1,6 @@
 package com.testdata.anotherpackage
 
-data class SimpleWithEnum(
+data class SimpleDataClassWithEnum(
     val name: String,
     val count: Int,
     val color: Color

@@ -19,16 +19,38 @@ class Validator {
         val violations = mutableSetOf<Violation>()
         againstInputClass.members.forEach { member ->
             // all members need to exist in the input
-            if (inputClass.members.none { it.name == member.name })
+            if (inputClass.members.none { it.name == member.name }) {
                 violations.add("Member '${member.name}' does not exist in input class")
-
-            // their types need to match or might be narrower considering nullability
-            // "against class" can aggree with null, but "input class" will always deliver a value => is OK
-            val otherMember = inputClass.members.first { it.name == member.name }
-            if (member.type != otherMember.type && (!member.isNullable() && otherMember.isNullable()))
-                violations.add("Member '${member.name}' types are not compatible: ${member.type} vs. ${otherMember.type}")
+            } else {
+                // their types need to match or might be narrower considering nullability
+                // "against class" can agree with null, but "input class" will always deliver a value => is OK
+                val otherMember = inputClass.members.first { it.name == member.name }
+                if (typesDiffer(otherMember.type, member.type, inputClass.classpackage, againstInputClass.classpackage) &&
+                    !isValidNullabilityOfSameType(otherMember, member, inputClass.classpackage, againstInputClass.classpackage)
+                ) {
+                    violations.add("Member '${member.name}' types are not compatible: ${otherMember.type} vs. ${member.type}")
+                }
+            }
         }
         return violations
+    }
+
+    private fun typesDiffer(inputMember: String, againstInputMember: String, inputPackage: String, againstInputPackage: String): Boolean {
+        // rationale behind: we typically have different packages for the data classes but want to validate as if they were in the same package
+        // (this should only apply for our own data classes, java and kotlin stdlib types will of course be not affected)
+        return againstInputMember != inputMember.replace(inputPackage, againstInputPackage)
+    }
+
+    private fun isValidNullabilityOfSameType(
+        inputMember: KotlinMemberDescription,
+        againstInputMember: KotlinMemberDescription,
+        inputPackage: String,
+        againstInputPackage: String
+    ): Boolean {
+        val sameTypeIgnoringNullability = inputMember.type.replace("?", "") ==
+                againstInputMember.type.replace(againstInputPackage, inputPackage).replace("?", "")
+
+        return sameTypeIgnoringNullability && againstInputMember.isNullable() && !inputMember.isNullable()
     }
 
     private fun validateReferencedTypes(
@@ -43,7 +65,7 @@ class Validator {
                     if (inputType == null)
                         violations.add("Referenced type '${typeToValidate.name}' does not exist in input class")
                     else
-                        validateMembers(inputType as KotlinValidatableDataClassDescription, typeToValidate)
+                        violations.addAll(validateMembers(inputType as KotlinValidatableDataClassDescription, typeToValidate))
                 }
 
                 is KotlinEnumDescripton -> {

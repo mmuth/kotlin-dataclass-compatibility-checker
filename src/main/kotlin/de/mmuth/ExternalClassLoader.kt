@@ -46,10 +46,8 @@ class ExternalClassLoader(
     private fun loadClassFile(fullyQualifiedClassName: String, classLoader: ClassLoader): KotlinValidatableTypeReference {
         val clazz = classLoader.loadClass(fullyQualifiedClassName)
 
-        // we will support different package names but same class names...
-        // we can't support anonymous classes and so on...
         val kClass = clazz.kotlin
-        val className = kClass.simpleName!!
+        val className = kClass.simpleName!! // we can't support anonymous classes in our whole use case
         val classPackage = clazz.`package`.name
 
         if (kClass.isData) {
