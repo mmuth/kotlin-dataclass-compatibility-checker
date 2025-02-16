@@ -1,0 +1,101 @@
+package de.mmuth
+
+import com.github.ajalt.clikt.core.CliktError
+import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
+import org.jetbrains.kotlin.cli.common.messages.PlainTextMessageRenderer
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
+import org.jetbrains.kotlin.config.Services
+import org.slf4j.LoggerFactory
+import java.io.File
+import java.net.URLClassLoader
+import kotlin.reflect.KProperty
+
+const val INPUT_FILE_BUILD_DIR = "build/classes/input"
+const val AGAINST_INPUT_FILE_BUILD_DIR = "build/classes/input"
+
+class ExternalClassLoader(private val inputFilePath: String, private val againstInputFilePath: String, private val usePreCompiledClasses: Boolean) {
+
+    private val logger = LoggerFactory.getLogger(this.javaClass)
+
+    fun load(): Pair<KotlinValidatableDataClassDescription, KotlinValidatableDataClassDescription> {
+        val inputClassLoader = compileKotlinClassFromRawFile(inputFilePath, INPUT_FILE_BUILD_DIR)
+        val inputClass = loadMainClass(inputFilePath, inputClassLoader)
+
+        val againstInputClassLoader = compileKotlinClassFromRawFile(againstInputFilePath, AGAINST_INPUT_FILE_BUILD_DIR)
+        val againstInputClass = loadMainClass(againstInputFilePath, againstInputClassLoader)
+        return Pair(inputClass, againstInputClass)
+    }
+
+    private fun loadMainClass(filePath: String, classLoader: ClassLoader): KotlinValidatableDataClassDescription {
+        val mainClassName = File(filePath).nameWithoutExtension
+        val packageName = File(filePath).readText().substringAfter("package ").substringBefore("\n").trim()
+        logger.info("Loading class $packageName.$mainClassName")
+
+        val loadedClass = loadClassFile("$packageName.$mainClassName", classLoader) // TODO dyn!
+        if (loadedClass !is KotlinValidatableDataClassDescription)
+            throw CliktError("Sorry, on top level, only data classes are supported!")
+        return loadedClass
+    }
+
+    private fun loadClassFile(fullyQualifiedClassName: String, classLoader: ClassLoader): KotlinValidatableTypeReference {
+        val clazz = classLoader.loadClass(fullyQualifiedClassName)
+
+        // we will support different package names but same class names...
+        // we can't support anonymous classes and so on...
+        val kClass = clazz.kotlin
+        val className = kClass.simpleName!!
+        val classPackage = clazz.`package`.name
+
+        if (kClass.isData) {
+            val properties = kClass.members.filter { it is KProperty }.map { KotlinMemberDescription(it.name, it.returnType.toString()) }
+
+            val referencedClassesToBeLoaded = properties.filter { it.type.contains(classPackage) }.map {
+                // those could be plain references or wrapped in a Collection or even multiple references for Maps
+                Regex(pattern = "(${classPackage}[\\w.]+)").findAll(it.type).map { it.value }.toSet()
+            }.toSet().flatten()
+
+            val loadedReferencedClasses = referencedClassesToBeLoaded.map { loadClassFile(it, classLoader) }.toSet()
+            return KotlinValidatableDataClassDescription(className, classPackage.toString(), properties, loadedReferencedClasses)
+        } else if (clazz.isEnum) {
+            val enumValues = clazz.enumConstants.map { it.toString() }
+            return KotlinEnumDescripton(className, enumValues)
+        } else {
+            throw CliktError("SORRY unsupported class in file found!: ${kClass.qualifiedName}. Currently only data classes and enums are supported!")
+        }
+    }
+
+    /**
+     * @return a classloader to get the compiled class
+     */
+    private fun compileKotlinClassFromRawFile(filePath: String, targetPath: String): ClassLoader {
+        val file = File(filePath)
+        val outputDir = File(targetPath)
+
+        if (!usePreCompiledClasses) {
+            outputDir.mkdirs()
+
+            // TODO this does not work in the jar context yet
+            val kotlinStdlib = File(System.getProperty("java.class.path").split(":").find { it.contains("kotlin-stdlib") } ?: "")
+            if (!kotlinStdlib.exists()) {
+                throw CliktError("Error: Kotlin Standard Library not found at ${kotlinStdlib.absolutePath}")
+            }
+
+            val compiler = K2JVMCompiler()
+            val args = K2JVMCompilerArguments().apply {
+                freeArgs = listOf(file.absolutePath)
+                classpath = kotlinStdlib.absolutePath
+                destination = outputDir.absolutePath
+            }
+
+            val exitCode = compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
+            compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
+            if (exitCode.code != 0) {
+                throw CliktError("Compilation failed with exit code: $exitCode")
+            }
+        }
+
+        return URLClassLoader(arrayOf(outputDir.toURI().toURL()))
+    }
+
+}

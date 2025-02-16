@@ -1,0 +1,26 @@
+[versions]
+kotlin = "2.0.0"
+detekt = "1.23.7"
+kotest = "5.9.1"
+
+[libraries]
+clikt = { module = "com.github.ajalt.clikt:clikt", version = "5.0.0" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version = "2.0.16" }
+logback-core = { module = "ch.qos.logback:logback-core", version = "1.5.12" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.12" }
+kotest-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version = "1.13.13" }
+kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version = "2.0.0" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version = "2.0.0" }
+
+[bundles]
+kotest = ["kotest-engine", "kotest-assertions", "kotest-runner"]
+logback = ["logback-core", "logback-classic"]
+
+[plugins]
+kotlinJVM = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+kotest = { id = "io.kotest.multiplatform", version.ref = "kotest" }
+shadowJar = { id = "com.github.johnrengelman.shadow", version = "7.1.0" }
