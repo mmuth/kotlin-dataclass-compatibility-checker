@@ -42,7 +42,7 @@ private fun validate(inputFile: String, againstInputFile: String): Set<Violation
     val mainClassNameFromFileName = inputFile.split("-")[0]
     val inputFilePath = "src/test/resources/testclasses/$inputFile.kt"
     val againstInputFilePath = "src/test/resources/testclasses/$againstInputFile.kt"
-    val loadedClasses = ExternalClassLoader(inputFilePath, againstInputFilePath, false, mainClassNameFromFileName).load()
+    val loadedClasses = ExternalClassLoader(inputFilePath, againstInputFilePath, mainClassNameFromFileName).load()
     val violations = Validator().check(loadedClasses.first, loadedClasses.second)
     println("Validation Results: $violations")
     return violations

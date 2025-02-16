@@ -18,7 +18,6 @@ const val AGAINST_INPUT_FILE_BUILD_DIR = "build/classes/against-input"
 class ExternalClassLoader(
     private val inputFilePath: String,
     private val againstInputFilePath: String,
-    private val usePreCompiledClasses: Boolean,
     private val mainClassName: String? = null
 ) {
 
@@ -78,31 +77,28 @@ class ExternalClassLoader(
         val file = File(filePath)
         val outputDir = File(targetPath)
 
-        if (!usePreCompiledClasses) {
-            outputDir.mkdirs()
+        outputDir.mkdirs()
 
-            val kotlinStdlib = File(System.getProperty("java.class.path").split(":").find { it.contains("kotlin-stdlib") } ?: "")
-            if (!kotlinStdlib.exists()) {
-                throw CliktError("Error: Kotlin Standard Library not found at ${kotlinStdlib.absolutePath}")
-            }
-
-            val compiler = K2JVMCompiler()
-            val args = K2JVMCompilerArguments().apply {
-                freeArgs = listOf(file.absolutePath)
-                classpath = kotlinStdlib.absolutePath
-                destination = outputDir.absolutePath
-            }
-
-            val duration = measureTime {
-                val exitCode = compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
-                compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
-                if (exitCode.code != 0) {
-                    throw CliktError("Compilation failed with exit code: $exitCode")
-                }
-            }
-
-            logger.info("Compilation took ${duration.inWholeMilliseconds} ms")
+        val kotlinStdlib = File(System.getProperty("java.class.path").split(":").find { it.contains("kotlin-stdlib") } ?: "")
+        if (!kotlinStdlib.exists()) {
+            throw CliktError("Error: Kotlin Standard Library not found at ${kotlinStdlib.absolutePath}")
         }
+
+        val compiler = K2JVMCompiler()
+        val args = K2JVMCompilerArguments().apply {
+            freeArgs = listOf(file.absolutePath)
+            classpath = kotlinStdlib.absolutePath
+            destination = outputDir.absolutePath
+        }
+
+        val duration = measureTime {
+            val exitCode = compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
+            compiler.exec(PrintingMessageCollector(System.err, PlainTextMessageRenderer.PLAIN_FULL_PATHS, false), Services.EMPTY, args)
+            if (exitCode.code != 0) {
+                throw CliktError("Compilation failed with exit code: $exitCode")
+            }
+        }
+        logger.info("Compilation took ${duration.inWholeMilliseconds} ms")
 
         return URLClassLoader(arrayOf(outputDir.toURI().toURL()))
     }
