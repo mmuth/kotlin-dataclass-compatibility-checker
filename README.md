@@ -9,7 +9,7 @@ You can compare it to the breaking change detection in [Protobufs](https://buf.b
 ## Usage
 
 ```
-kotlin-dataclass-compatibility-checker --input ./MyDataClassUpdated.kt --against-input ./MyDataClass.kt
+kotlin-dataclass-compatibility-checker --input ./Updated/MyClass.kt --against-input ./Baseline/MyClass.kt
 ```
 
 ## Constraints
