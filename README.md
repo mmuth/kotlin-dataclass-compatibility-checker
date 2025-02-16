@@ -1,12 +1,15 @@
 # kotlin-dataclass-compatibility-checker
 
 This is a small cli to validate the compatibility of two kotlin data classes against each other.
-It is useful for DTOs and comparable to the breaking change detection in [Protobufs](https://buf.build/docs/breaking/overview/) `buf` util.
+It is useful for DTOs that are shared in two (or more) locations and you want to ensure that you don't change it
+in an incompatible way (e.g. DTO shared between Client and Server or between two or more microservices).
+
+You can compare it to the breaking change detection in [Protobufs](https://buf.build/docs/breaking/overview/) `buf` util.
 
 ## Usage
 
 ```
-kotlin-dataclass-compatibility-checker --input ./MyDataClass.kt --against-input ./MyDataClassChanged.kt
+kotlin-dataclass-compatibility-checker --input ./MyDataClassUpdated.kt --against-input ./MyDataClass.kt
 ```
 
 ## Constraints
