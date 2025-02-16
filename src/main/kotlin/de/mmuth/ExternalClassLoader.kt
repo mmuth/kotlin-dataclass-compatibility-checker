@@ -74,19 +74,14 @@ class ExternalClassLoader(
     private fun compileKotlinClassFromRawFile(filePath: String, targetPath: String): ClassLoader {
         val file = File(filePath)
         val outputDir = File(targetPath)
-
         outputDir.mkdirs()
-
-        val kotlinStdlib = File(System.getProperty("java.class.path").split(":").find { it.contains("kotlin-stdlib") } ?: "")
-        if (!kotlinStdlib.exists()) {
-            throw CliktError("Error: Kotlin Standard Library not found at ${kotlinStdlib.absolutePath}")
-        }
 
         val compiler = K2JVMCompiler()
         val args = K2JVMCompilerArguments().apply {
             freeArgs = listOf(file.absolutePath)
-            classpath = kotlinStdlib.absolutePath
+            classpath = System.getProperty("java.class.path")
             destination = outputDir.absolutePath
+            noStdlib = true
         }
 
         val duration = measureTime {
