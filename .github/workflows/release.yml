@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  build:
+    name: Build JAR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+      - uses: gradle/actions/setup-gradle@v3
+      - run: make build-jar
+      - name: get jar file
+        run: echo "JAR_PATH=$(find ./build -name '*.jar' | head -n 1)" >> $GITHUB_ENV
+      - name: Upload as GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.JAR_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
