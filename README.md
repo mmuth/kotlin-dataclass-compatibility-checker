@@ -31,47 +31,49 @@ e.g. validating
   <tr>
     <td>
 
-        data class Car(
-            val manufacturer: String,
-            //              <== dropped model
-            val year: Int?, // <== now nullable
-            val color: Color,
-        )
+    data class Car(
+      val manufacturer: String,
+      //              <== dropped model
+      val year: Int?, // <== now nullable
+      val color: Color,
+      val owner: Owner
+    )
 
-        data class Owner(
-            //              <== dropped name
-            val dateOfBirth: Instant,
-            val favoriteFood: String // <== new
-        )
-        
-        enum class Color {
-            LE_MANS_BLUE,
-            GT_SILVER,
-            // <== removed DRAGON_GREEN
-            TORNADO_RED
-        }
+    data class Owner(
+      //              <== dropped name
+      val dateOfBirth: Instant,
+      val favoriteFood: String // new (OK)
+    )
+    
+    enum class Color {
+      LE_MANS_BLUE,
+      GT_SILVER,
+      // <== removed one
+      TORNADO_RED
+    }
 
 </td>
 <td>
 
-        data class Car(
-            val manufacturer: String,
-            val model: String
-            val year: Int,
-            val color: Color,
-        )
-        
-        data class Owner(
-            val name: String,
-            val dateOfBirth: Instant            
-        )
-        
-        enum class Color {
-            LE_MANS_BLUE,
-            GT_SILVER,
-            DRAGON_GREEN,
-            TORNADO_RED
-        }
+    data class Car(
+      val manufacturer: String,
+      val model: String
+      val year: Int,
+      val color: Color,
+      val owner: Owner
+    )
+    
+    data class Owner(
+      val name: String,
+      val dateOfBirth: Instant           
+    )
+    
+    enum class Color {
+      LE_MANS_BLUE,
+      GT_SILVER,
+      DRAGON_GREEN,
+      TORNADO_RED
+    }
 
 </td></tr></table> 
 
@@ -92,10 +94,12 @@ You can alternatively check the tests in `src/test/resources` for more examples.
 Currently, exactly one kotlin main data class is supported for the validation. However, using other classes (referenced from the main class) in the
 to-be-validated class is supported, as long as everything is in one file :-).
 
-## Other
+## Contributing
 
 Feel free to contribute.
 
-Dedicated to [meisterplan.com](https://meisterplan.com), the greatest PPM Tool in the world.
-And a big shoutout to the awesome people working there.
+## Other
+
+Dedicated to [meisterplan.com](https://meisterplan.com), the greatest PPM Tool in the world. \
+A big shoutout to the awesome people working there ❤️
 
