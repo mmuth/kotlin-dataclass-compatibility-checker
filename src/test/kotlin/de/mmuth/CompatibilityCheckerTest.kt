@@ -42,6 +42,11 @@ class CompatibilityCheckerTest : DescribeSpec({
             val violations = validate("ComplexDataClass-Valid-AddFieldInSubTypeAndEnum", "ComplexDataClass-Baseline")
             violations shouldHaveSize 0
         }
+
+        it("will ignore unrelated changes that do not affect the main data class") {
+            val violations = validate("SimpleDataClassWithEnum-Valid-AddedUnrelatedClass", "SimpleDataClassWithEnum-Baseline")
+            violations shouldHaveSize 0
+        }
     }
 
     describe("Validation will fail for incompatible changes") {
