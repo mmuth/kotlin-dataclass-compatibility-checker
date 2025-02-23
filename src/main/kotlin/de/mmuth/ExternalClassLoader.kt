@@ -37,7 +37,7 @@ class ExternalClassLoader(
         val packageName = File(filePath).readText().substringAfter("package ").substringBefore("\n").trim()
         logger.info("Loading class $packageName.$mainClassName")
 
-        val loadedClass = loadClassFile("$packageName.$mainClassName", classLoader) // TODO dyn!
+        val loadedClass = loadClassFile("$packageName.$mainClassName", classLoader)
         if (loadedClass !is KotlinValidatableDataClassDescription)
             throw CliktError("Sorry, on top level, only data classes are supported!")
         return loadedClass

@@ -101,7 +101,7 @@ class CompatibilityCheckerTest : DescribeSpec({
         }
 
         it("will fail for multiple nullable types within one type reference") {
-            val inputViolations = validate("Invalid-UnsupportedNullabilities", "SimpleDataClass-Baseline")
+            val inputViolations = validate("SimpleDataClass-Invalid-UnsupportedNullabilities", "SimpleDataClass-Baseline")
             val expectation = "Sorry, inputs contain unsupported typings - currently only one nullable type per type reference is supported. Stopping."
             inputViolations.shouldContainExactly(expectation)
         }

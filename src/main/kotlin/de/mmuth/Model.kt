@@ -8,7 +8,7 @@ data class KotlinValidatableDataClassDescription(
     override val name: String,
     val classpackage: String,
     val members: List<KotlinMemberDescription>,
-    val referencedTypesToValidate: Set<KotlinValidatableTypeReference>?
+    val referencedTypesToValidate: Set<KotlinValidatableTypeReference>
 ) : KotlinValidatableTypeReference {
 
     fun fullyQualifiedName() = "$classpackage.$name"
@@ -18,9 +18,9 @@ data class KotlinValidatableDataClassDescription(
             .all { it.isValidationSupported() }
 
     fun getAllTypeReferences(): Set<KotlinValidatableTypeReference> =
-        (this.referencedTypesToValidate ?: emptySet()) +
-                (this.referencedTypesToValidate?.filterIsInstance<KotlinValidatableDataClassDescription>()?.map { it.getAllTypeReferences() }?.flatten()
-                    ?.toSet() ?: emptySet())
+        this.referencedTypesToValidate +
+                this.referencedTypesToValidate.filterIsInstance<KotlinValidatableDataClassDescription>().map { it.getAllTypeReferences() }.flatten()
+                    .toSet()
 }
 
 data class KotlinEnumDescripton(
