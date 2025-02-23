@@ -1,8 +1,11 @@
 package de.mmuth
 
+import com.github.ajalt.clikt.core.CliktError
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.string.shouldContain
 import java.io.File
 
 class CompatibilityCheckerTest : DescribeSpec({
@@ -81,7 +84,15 @@ class CompatibilityCheckerTest : DescribeSpec({
         }
     }
 
-    describe("Validation will fail for unsupported type constellations") {
+    describe("Validation will fail for unsupported type constellations or rough mismatches") {
+        it("will fail if classes are not data classes or enums") {
+            val exception = shouldThrow<CliktError> {
+                validate("Invalid-NotADataClass", "SimpleDataClass-Baseline")
+            }
+
+            exception.message shouldContain "only data classes and enums are supported"
+        }
+
         it("will fail if the main classes are not even matching") {
             val inputClass = KotlinValidatableDataClassDescription("Boats", "com.testdata.anotherpackage", emptyList(), emptySet())
             val totallyDifferentOtherClass = KotlinValidatableDataClassDescription("Cars", "com.testdata.anotherpackage", emptyList(), emptySet())
@@ -90,8 +101,9 @@ class CompatibilityCheckerTest : DescribeSpec({
         }
 
         it("will fail for multiple nullable types within one type reference") {
-            val violations = validate("SimpleDataClass-Invalid-UnsupportedNullabilities", "SimpleDataClass-Baseline")
-            violations.shouldContainExactly("Sorry, inputs contain unsupported typings - currently only one nullable type per type reference is supported. Stopping.")
+            val inputViolations = validate("Invalid-UnsupportedNullabilities", "SimpleDataClass-Baseline")
+            val expectation = "Sorry, inputs contain unsupported typings - currently only one nullable type per type reference is supported. Stopping."
+            inputViolations.shouldContainExactly(expectation)
         }
     }
 
