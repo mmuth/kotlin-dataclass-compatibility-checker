@@ -2,5 +2,5 @@
 .gradle/
 .kotlin/
 build/
-
+sample/*.jar
 

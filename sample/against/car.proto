@@ -1,0 +1,23 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+message Car {
+  string manufacturer = 1;
+  int32 year = 2;
+  string model = 3;
+  int32 horsePower = 4;
+  Color color = 5;
+  Owner owner = 6;
+
+  message Owner {
+    string name = 1;
+    google.protobuf.Timestamp dateOfBirth = 2;
+  }
+
+  enum Color {
+    LE_MANS_BLUE = 0;
+    GT_SILVER = 1;
+    DRAGON_GREEN = 2;
+    TORNADO_RED = 3;
+  }
+}

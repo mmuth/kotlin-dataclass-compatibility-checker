@@ -17,7 +17,7 @@ open class KotlinDataClassCompatibilityChecker : CliktCommand() {
     ).prompt("Please provide the path to the input file (`producer`)")
 
     val againstInputFilePath by option(
-        "--against-input",
+        "--against",
         help = "other file to be validated against breaking changes"
     ).prompt("Please provide the path to the input file, this is the `baseline` (`consumer`)")
 
