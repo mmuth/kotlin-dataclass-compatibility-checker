@@ -31,6 +31,16 @@ class CompatibilityCheckerTest : DescribeSpec({
             violations shouldHaveSize 0
         }
 
+        it("is OK to add a new data class and reference it in a new field") {
+            val violations = validate("SimpleDataClassWithEnum-Valid-AddedNewFieldWithNewType", "SimpleDataClassWithEnum-Baseline")
+            violations shouldHaveSize 0
+        }
+
+        it("is OK to add a new enum and reference it in a new field") {
+            val violations = validate("SimpleDataClassWithEnum-Valid-AddedNewFieldWithNewEnum", "SimpleDataClassWithEnum-Baseline")
+            violations shouldHaveSize 0
+        }
+
         it("will also work for nested types (referenced data classes and enums)") {
             val fieldViolations = validate("DataClassWithNestedMembers-Valid-AddedFieldToSubType", "DataClassWithNestedMembers-Baseline")
             val enumViolations = validate("DataClassWithNestedMembers-Valid-AddedValueToSubEnum", "DataClassWithNestedMembers-Baseline")
