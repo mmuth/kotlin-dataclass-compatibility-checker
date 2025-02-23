@@ -1,4 +1,4 @@
-package com.testdata.anotherpackage
+package com.testdata.somepackage
 
 data class SimpleDataClass(
     val name: String,

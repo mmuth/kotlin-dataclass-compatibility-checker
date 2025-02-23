@@ -10,7 +10,17 @@ data class KotlinValidatableDataClassDescription(
     val members: List<KotlinMemberDescription>,
     val referencedTypesToValidate: Set<KotlinValidatableTypeReference>?
 ) : KotlinValidatableTypeReference {
+
     fun fullyQualifiedName() = "$classpackage.$name"
+
+    fun isValidationSupported(): Boolean =
+        members.all { it.isValidationSupported() } && getAllTypeReferences().filterIsInstance<KotlinValidatableDataClassDescription>()
+            .all { it.isValidationSupported() }
+
+    fun getAllTypeReferences(): Set<KotlinValidatableTypeReference> =
+        (this.referencedTypesToValidate ?: emptySet()) +
+                (this.referencedTypesToValidate?.filterIsInstance<KotlinValidatableDataClassDescription>()?.map { it.getAllTypeReferences() }?.flatten()
+                    ?.toSet() ?: emptySet())
 }
 
 data class KotlinEnumDescripton(
@@ -22,5 +32,6 @@ data class KotlinMemberDescription(
     val name: String,
     val type: String
 ) {
-    fun isNullable() = type.contains("?") // TODO this a bit too easy currently as it could be wrapped in Lists/Maps...
+    fun isNullable() = type.contains("?")
+    fun isValidationSupported() = type.count { it == '?' } <= 1
 }

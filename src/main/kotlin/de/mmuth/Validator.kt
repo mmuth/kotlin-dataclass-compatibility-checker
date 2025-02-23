@@ -7,10 +7,15 @@ class Validator {
     fun check(inputClass: KotlinValidatableDataClassDescription, againstInputClass: KotlinValidatableDataClassDescription): Set<Violation> {
         val violations = mutableSetOf<Violation>()
         if (againstInputClass.name != inputClass.name)
-            violations.add("Main data class names do not match: '${inputClass.name}' vs. '${againstInputClass.name}'")
+            violations.add("Main data class names do not match: '${inputClass.name}' vs. '${againstInputClass.name}'. Stopping.")
 
-        violations.addAll(validateMembers(inputClass, againstInputClass))
-        violations.addAll(validateReferencedTypes(inputClass, againstInputClass))
+        if (!againstInputClass.isValidationSupported() || !inputClass.isValidationSupported())
+            violations.add("Sorry, inputs contain unsupported typings - currently only one nullable type per type reference is supported. Stopping.")
+
+        if (violations.isEmpty()) {
+            violations.addAll(validateMembers(inputClass, againstInputClass))
+            violations.addAll(validateReferencedTypes(inputClass, againstInputClass))
+        }
 
         return violations
     }
@@ -20,7 +25,7 @@ class Validator {
         againstInputClass.members.forEach { member ->
             // all members need to exist in the input
             if (inputClass.members.none { it.name == member.name }) {
-                violations.add("Member '${member.name}' was removed")
+                violations.add("Type '${inputClass.name}', Member '${member.name}' was removed")
             } else {
                 // their types need to match or might be narrower considering nullability
                 // "against class" can agree with null, but "input class" will always deliver a value => is OK
@@ -28,7 +33,7 @@ class Validator {
                 if (typesDiffer(otherMember.type, member.type, inputClass.classpackage, againstInputClass.classpackage) &&
                     !isValidNullabilityOfSameType(otherMember, member, inputClass.classpackage, againstInputClass.classpackage)
                 ) {
-                    violations.add("Member '${member.name}' types are not compatible: ${otherMember.type} vs. ${member.type}")
+                    violations.add("Type '${inputClass.name}', Member '${member.name}': types are not compatible: ${otherMember.type} vs. ${member.type}")
                 }
             }
         }
@@ -58,10 +63,12 @@ class Validator {
         againstInputClass: KotlinValidatableDataClassDescription
     ): Set<Violation> {
         val violations = mutableSetOf<Violation>()
-        againstInputClass.referencedTypesToValidate?.forEach { typeToValidate ->
+        val inputReferences = inputClass.getAllTypeReferences()
+        val againstReferences = againstInputClass.getAllTypeReferences()
+        againstReferences.forEach { typeToValidate ->
             when (typeToValidate) {
                 is KotlinValidatableDataClassDescription -> {
-                    val inputType = inputClass.referencedTypesToValidate?.firstOrNull { it.name == typeToValidate.name }
+                    val inputType = inputReferences.firstOrNull { it.name == typeToValidate.name }
                     if (inputType == null)
                         violations.add("Referenced type '${typeToValidate.name}' does not exist in input class")
                     else
@@ -69,7 +76,7 @@ class Validator {
                 }
 
                 is KotlinEnumDescripton -> {
-                    val inputType = inputClass.referencedTypesToValidate?.firstOrNull { it.name == typeToValidate.name }
+                    val inputType = inputReferences.firstOrNull { it.name == typeToValidate.name }
                     if (inputType == null)
                         violations.add("Referenced enum '${typeToValidate.name}' does not exist in input class")
                     else
