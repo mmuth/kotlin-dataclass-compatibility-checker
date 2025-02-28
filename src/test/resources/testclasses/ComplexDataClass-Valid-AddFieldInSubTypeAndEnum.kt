@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class ComplexDataClass(
     val name: String,
     val age: Int,
-    val garagesByHouse: Map<House, Garage>, // <== garage now non-nullable
+    val garagesByHouse: Map<House, Garage>,
     val carsByColor: Map<Color, List<Car>>
 ) {
     // sample method that should just be ignored by the validation

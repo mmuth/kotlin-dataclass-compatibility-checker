@@ -13,10 +13,6 @@ data class KotlinValidatableDataClassDescription(
 
     fun fullyQualifiedName() = "$classpackage.$name"
 
-    fun isValidationSupported(): Boolean =
-        members.all { it.isValidationSupported() } && getAllTypeReferences().filterIsInstance<KotlinValidatableDataClassDescription>()
-            .all { it.isValidationSupported() }
-
     fun getAllTypeReferences(): Set<KotlinValidatableTypeReference> =
         this.referencedTypesToValidate +
                 this.referencedTypesToValidate.filterIsInstance<KotlinValidatableDataClassDescription>().map { it.getAllTypeReferences() }.flatten()
@@ -31,7 +27,4 @@ data class KotlinEnumDescripton(
 data class KotlinMemberDescription(
     val name: String,
     val type: String
-) {
-    fun isNullable() = type.contains("?")
-    fun isValidationSupported() = type.count { it == '?' } <= 1
-}
+)

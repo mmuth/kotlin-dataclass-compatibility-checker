@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class ComplexDataClass(
     val name: String,
     val age: Int,
-    val garagesByHouse: Map<House, Garage?>,
+    val garagesByHouse: Map<House, Garage>,
     val carsByColor: Map<Color, List<Car>>
 ) {
     // sample method that should just be ignored by the validation
@@ -29,8 +29,8 @@ data class Garage(
 
 data class Address(
     val street: String,
-    val city: String?, // <= breaking change
-    val zipCode: String
+    val city: String,
+    val zipCode: Int // <= breaking change
 )
 
 data class Car(

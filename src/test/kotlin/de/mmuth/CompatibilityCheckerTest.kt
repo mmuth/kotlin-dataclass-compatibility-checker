@@ -21,11 +21,6 @@ class CompatibilityCheckerTest : DescribeSpec({
             violations shouldHaveSize 0
         }
 
-        it("is OK to change nullable fields to non-null (narrowing)") {
-            val violations = validate("ClassWithLists-Valid-ChangeNullableTypeToNonNullable", "ClassWithLists-Baseline")
-            violations shouldHaveSize 0
-        }
-
         it("is OK to add a value to an enum") {
             val violations = validate("SimpleDataClassWithEnum-Valid-AddedValueToEnum", "SimpleDataClassWithEnum-Baseline")
             violations shouldHaveSize 0
@@ -94,8 +89,8 @@ class CompatibilityCheckerTest : DescribeSpec({
         }
 
         it("will detect breaking changes also for deeper nested types") {
-            val violations = validate("ComplexDataClass-Invalid-ChangeFieldToNullableInSubtype", "ComplexDataClass-Baseline")
-            violations.shouldContainExactly("Type 'Address', Member 'city': types are not compatible: kotlin.String? vs. kotlin.String")
+            val violations = validate("ComplexDataClass-Invalid-ChangeFieldTypeInReferencedType", "ComplexDataClass-Baseline")
+            violations.shouldContainExactly("Type 'Address', Member 'zipCode': types are not compatible: kotlin.Int vs. kotlin.String")
         }
     }
 
@@ -113,12 +108,6 @@ class CompatibilityCheckerTest : DescribeSpec({
             val totallyDifferentOtherClass = KotlinValidatableDataClassDescription("Cars", "com.testdata.anotherpackage", emptyList(), emptySet())
             val violations = Validator().check(inputClass, totallyDifferentOtherClass)
             violations.shouldContainExactly("Main data class names do not match: 'Boats' vs. 'Cars'. Stopping.")
-        }
-
-        it("will fail for multiple nullable types within one type reference") {
-            val inputViolations = validate("SimpleDataClass-Invalid-UnsupportedNullabilities", "SimpleDataClass-Baseline")
-            val expectation = "Sorry, inputs contain unsupported typings - currently only one nullable type per type reference is supported. Stopping."
-            inputViolations.shouldContainExactly(expectation)
         }
     }
 
