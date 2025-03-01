@@ -28,7 +28,7 @@ open class KotlinDataClassCompatibilityChecker : CliktCommand() {
         val loadedClasses = ExternalClassLoader(inputFilePath, againstInputFilePath).load()
 
         logger.info("Main data class ${loadedClasses.first.fullyQualifiedName()} is validated against ${loadedClasses.second.fullyQualifiedName()}")
-        val result = Validator().check(loadedClasses.first, loadedClasses.second)
+        val result = Validator().check(loadedClasses)
 
         if (result.isEmpty()) {
             logger.info("Validation succeeded - no breaking changes found.")

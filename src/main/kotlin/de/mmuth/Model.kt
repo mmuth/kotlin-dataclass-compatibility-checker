@@ -1,5 +1,8 @@
 package de.mmuth
 
+
+typealias ValidationInputs = Pair<KotlinValidatableClassDescription, KotlinValidatableClassDescription>
+
 interface KotlinValidatableTypeReference {
     val name: String
 }

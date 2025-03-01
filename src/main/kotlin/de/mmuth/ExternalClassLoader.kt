@@ -23,13 +23,13 @@ class ExternalClassLoader(
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
-    fun load(): Pair<KotlinValidatableClassDescription, KotlinValidatableClassDescription> {
+    fun load(): ValidationInputs {
         val inputClassLoader = compileKotlinClassFromRawFile(inputFilePath, INPUT_FILE_BUILD_DIR)
         val inputClass = loadMainClass(inputFilePath, inputClassLoader, mainClassName)
 
         val againstInputClassLoader = compileKotlinClassFromRawFile(againstInputFilePath, AGAINST_INPUT_FILE_BUILD_DIR)
         val againstInputClass = loadMainClass(againstInputFilePath, againstInputClassLoader, mainClassName)
-        return Pair(inputClass, againstInputClass)
+        return ValidationInputs(inputClass, againstInputClass)
     }
 
     private fun loadMainClass(filePath: String, classLoader: ClassLoader, specificMainClassName: String?): KotlinValidatableClassDescription {

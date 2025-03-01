@@ -4,7 +4,9 @@ typealias Violation = String
 
 class Validator {
 
-    fun check(inputClass: KotlinValidatableClassDescription, againstInputClass: KotlinValidatableClassDescription): Set<Violation> {
+    fun check(validationInputs: ValidationInputs): Set<Violation> {
+        val inputClass = validationInputs.first
+        val againstInputClass = validationInputs.second
         val violations = mutableSetOf<Violation>()
         if (againstInputClass.name != inputClass.name)
             violations.add("Main data class names do not match: '${inputClass.name}' vs. '${againstInputClass.name}'. Stopping.")

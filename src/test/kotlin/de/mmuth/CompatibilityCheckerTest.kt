@@ -118,7 +118,7 @@ class CompatibilityCheckerTest : DescribeSpec({
         it("will fail if the main classes are not even matching") {
             val inputClass = KotlinValidatableClassDescription("Boats", "com.testdata.anotherpackage", emptyList(), emptySet(), emptySet())
             val totallyDifferentOtherClass = KotlinValidatableClassDescription("Cars", "com.testdata.anotherpackage", emptyList(), emptySet(), emptySet())
-            val violations = Validator().check(inputClass, totallyDifferentOtherClass)
+            val violations = Validator().check(ValidationInputs(inputClass, totallyDifferentOtherClass))
             violations.shouldContainExactly("Main data class names do not match: 'Boats' vs. 'Cars'. Stopping.")
         }
     }
@@ -130,7 +130,7 @@ private fun validate(inputFile: String, againstInputFile: String): Set<Violation
     val inputFilePath = "src/test/resources/testclasses/$inputFile.kt"
     val againstInputFilePath = "src/test/resources/testclasses/$againstInputFile.kt"
     val loadedClasses = ExternalClassLoader(inputFilePath, againstInputFilePath, mainClassNameFromFileName).load()
-    val violations = Validator().check(loadedClasses.first, loadedClasses.second)
+    val violations = Validator().check(loadedClasses)
     println("Validation Results: $violations")
     return violations
 }
