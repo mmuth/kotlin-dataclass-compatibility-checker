@@ -44,7 +44,7 @@ class CompatibilityCheckerTest : DescribeSpec({
         }
 
         it("will also work for deeper nested types") {
-            val violations = validate("ComplexDataClass-Valid-AddFieldInSubTypeAndEnum", "ComplexDataClass-Baseline")
+            val violations = validate("ComplexDataClass-Valid-AddFieldInSubTypeAndEnumAndSealedClass", "ComplexDataClass-Baseline")
             violations shouldHaveSize 0
         }
 
@@ -90,7 +90,19 @@ class CompatibilityCheckerTest : DescribeSpec({
 
         it("will detect breaking changes also for deeper nested types") {
             val violations = validate("ComplexDataClass-Invalid-ChangeFieldTypeInReferencedType", "ComplexDataClass-Baseline")
-            violations.shouldContainExactly("Type 'Address', Member 'zipCode': types are not compatible: kotlin.Int vs. kotlin.String")
+            violations.shouldContainExactly(
+                "Type 'Address', Member 'zipCode': types are not compatible: kotlin.Int vs. kotlin.String"
+            )
+        }
+
+        it("will detect breaking changes also for sealed classes") {
+            val violations = validate("ComplexDataClass-Invalid-SubtypeOfSealedClassRemoved", "ComplexDataClass-Baseline")
+            violations.shouldContainExactly(
+                "Enum 'Color': value 'ZYKLAM_RED_PEARLEFFECT' was removed",
+                "Sealed class 'Vehicle': subclass 'Truck' was removed",
+                "Type 'MotorCycle', Member 'horsePower' was removed",
+                "Referenced type 'Truck' does not exist in input class"
+            )
         }
     }
 
@@ -100,12 +112,12 @@ class CompatibilityCheckerTest : DescribeSpec({
                 validate("Invalid-NotADataClass", "SimpleDataClass-Baseline")
             }
 
-            exception.message shouldContain "only data classes and enums are supported"
+            exception.message shouldContain "only data classes, sealed classes and enums are supported"
         }
 
         it("will fail if the main classes are not even matching") {
-            val inputClass = KotlinValidatableDataClassDescription("Boats", "com.testdata.anotherpackage", emptyList(), emptySet())
-            val totallyDifferentOtherClass = KotlinValidatableDataClassDescription("Cars", "com.testdata.anotherpackage", emptyList(), emptySet())
+            val inputClass = KotlinValidatableClassDescription("Boats", "com.testdata.anotherpackage", emptyList(), emptySet(), emptySet())
+            val totallyDifferentOtherClass = KotlinValidatableClassDescription("Cars", "com.testdata.anotherpackage", emptyList(), emptySet(), emptySet())
             val violations = Validator().check(inputClass, totallyDifferentOtherClass)
             violations.shouldContainExactly("Main data class names do not match: 'Boats' vs. 'Cars'. Stopping.")
         }

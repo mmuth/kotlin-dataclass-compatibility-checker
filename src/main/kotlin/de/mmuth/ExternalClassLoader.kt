@@ -23,7 +23,7 @@ class ExternalClassLoader(
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
-    fun load(): Pair<KotlinValidatableDataClassDescription, KotlinValidatableDataClassDescription> {
+    fun load(): Pair<KotlinValidatableClassDescription, KotlinValidatableClassDescription> {
         val inputClassLoader = compileKotlinClassFromRawFile(inputFilePath, INPUT_FILE_BUILD_DIR)
         val inputClass = loadMainClass(inputFilePath, inputClassLoader, mainClassName)
 
@@ -32,13 +32,13 @@ class ExternalClassLoader(
         return Pair(inputClass, againstInputClass)
     }
 
-    private fun loadMainClass(filePath: String, classLoader: ClassLoader, specificMainClassName: String?): KotlinValidatableDataClassDescription {
+    private fun loadMainClass(filePath: String, classLoader: ClassLoader, specificMainClassName: String?): KotlinValidatableClassDescription {
         val mainClassName = specificMainClassName ?: File(filePath).nameWithoutExtension
         val packageName = File(filePath).readText().substringAfter("package ").substringBefore("\n").trim()
         logger.info("Loading class $packageName.$mainClassName")
 
         val loadedClass = loadClassFile("$packageName.$mainClassName", classLoader)
-        if (loadedClass !is KotlinValidatableDataClassDescription)
+        if (loadedClass !is KotlinValidatableClassDescription)
             throw CliktError("Sorry, on top level, only data classes are supported!")
         return loadedClass
     }
@@ -47,24 +47,34 @@ class ExternalClassLoader(
         val clazz = classLoader.loadClass(fullyQualifiedClassName)
 
         val kClass = clazz.kotlin
-        val className = kClass.simpleName!! // we can't support anonymous classes in our whole use case
+        val className = kClass.simpleName ?: throw CliktError("Anonymous classes are not supported!")
         val classPackage = clazz.`package`.name
 
-        if (kClass.isData) {
-            val properties = kClass.members.filter { it is KProperty }.map { KotlinMemberDescription(it.name, it.returnType.toString()) }
+        when {
+            kClass.isSealed -> {
+                val sealedSubclasses = kClass.sealedSubclasses.map { KotlinSealedSubClassDescription(it.simpleName!!) }.toSet()
+                val loadedSubclasses = kClass.sealedSubclasses.map { loadClassFile(it.qualifiedName!!, classLoader) }.toSet()
+                return KotlinValidatableClassDescription(className, classPackage.toString(), emptyList(), sealedSubclasses, loadedSubclasses)
+            }
 
-            val referencedClassesToBeLoaded = properties.filter { it.type.contains(classPackage) }.map {
-                // those could be plain references or wrapped in a Collection or even multiple references for Maps
-                Regex(pattern = "(${classPackage}[\\w.]+)").findAll(it.type).map { it.value }.toSet()
-            }.toSet().flatten()
+            kClass.isData -> {
+                val properties = kClass.members.filter { it is KProperty }.map { KotlinMemberDescription(it.name, it.returnType.toString()) }
 
-            val loadedReferencedClasses = referencedClassesToBeLoaded.map { loadClassFile(it, classLoader) }.toSet()
-            return KotlinValidatableDataClassDescription(className, classPackage.toString(), properties, loadedReferencedClasses)
-        } else if (clazz.isEnum) {
-            val enumValues = clazz.enumConstants.map { it.toString() }
-            return KotlinEnumDescripton(className, enumValues)
-        } else {
-            throw CliktError("SORRY unsupported class in file found!: ${kClass.qualifiedName}. Currently only data classes and enums are supported!")
+                val referencedClassesToBeLoaded = properties.filter { it.type.contains(classPackage) }.map {
+                    // those could be plain references or wrapped in a Collection or even multiple references for Maps
+                    Regex(pattern = "(${classPackage}[\\w.]+)").findAll(it.type).map { it.value }.toSet()
+                }.toSet().flatten()
+
+                val loadedReferencedClasses = referencedClassesToBeLoaded.map { loadClassFile(it, classLoader) }.toSet()
+                return KotlinValidatableClassDescription(className, classPackage.toString(), properties, emptySet(), loadedReferencedClasses)
+            }
+
+            clazz.isEnum -> {
+                val enumValues = clazz.enumConstants.map { it.toString() }
+                return KotlinEnumDescripton(className, enumValues)
+            }
+
+            else -> throw CliktError("SORRY unsupported class in file found!: ${kClass.qualifiedName}. Currently only data classes, sealed classes and enums are supported!")
         }
     }
 

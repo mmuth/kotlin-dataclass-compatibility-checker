@@ -8,7 +8,8 @@ data class ComplexDataClass(
     val name: String,
     val age: Int,
     val garagesByHouse: Map<House, Garage>,
-    val carsByColor: Map<Color, List<Car>>
+    val carsByColor: Map<Color, List<Car>>,
+    val vehicles: List<Vehicle>,
 ) {
     // sample method that should just be ignored by the validation
     fun isCarInGarage(garage: Garage, car: Car): Boolean {
@@ -33,16 +34,30 @@ data class Address(
     val zipCode: String
 )
 
+sealed class Vehicle
+
 data class Car(
     val name: String,
     val year: Int,
     val model: String,
     val horsePower: Int,
-    val color: Color,
     val consumption: BigDecimal,
     val bought: LocalDateTime,
     val lastService: Instant
-)
+) : Vehicle()
+
+data class MotorCycle(
+    val name: String,
+    val year: Int,
+    val model: String,
+    val horsePower: Int,
+) : Vehicle()
+
+data class Truck(
+    val name: String,
+    val year: Int,
+    val model: String,
+) : Vehicle()
 
 enum class Color {
     LE_MANS_BLUE,
@@ -51,3 +66,4 @@ enum class Color {
     ZYKLAM_RED_PEARLEFFECT,
     DRAGON_GREEN
 }
+

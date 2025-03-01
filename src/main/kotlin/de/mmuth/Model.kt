@@ -4,10 +4,11 @@ interface KotlinValidatableTypeReference {
     val name: String
 }
 
-data class KotlinValidatableDataClassDescription(
+data class KotlinValidatableClassDescription(
     override val name: String,
     val classpackage: String,
     val members: List<KotlinMemberDescription>,
+    val sealedClassImplementations: Set<KotlinSealedSubClassDescription>,
     val referencedTypesToValidate: Set<KotlinValidatableTypeReference>
 ) : KotlinValidatableTypeReference {
 
@@ -15,7 +16,7 @@ data class KotlinValidatableDataClassDescription(
 
     fun getAllTypeReferences(): Set<KotlinValidatableTypeReference> =
         this.referencedTypesToValidate +
-                this.referencedTypesToValidate.filterIsInstance<KotlinValidatableDataClassDescription>().map { it.getAllTypeReferences() }.flatten()
+                this.referencedTypesToValidate.filterIsInstance<KotlinValidatableClassDescription>().map { it.getAllTypeReferences() }.flatten()
                     .toSet()
 }
 
@@ -28,3 +29,7 @@ data class KotlinMemberDescription(
     val name: String,
     val type: String
 )
+
+data class KotlinSealedSubClassDescription(
+    override val name: String
+) : KotlinValidatableTypeReference

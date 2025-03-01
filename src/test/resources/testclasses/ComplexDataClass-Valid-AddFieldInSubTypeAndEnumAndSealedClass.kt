@@ -31,7 +31,8 @@ data class Garage(
 data class Address(
     val street: String,
     val city: String,
-    val zipCode: Int // <== breaking change
+    val zipCode: String,
+    val country: String // <== new field
 )
 
 sealed class Vehicle
@@ -59,11 +60,19 @@ data class Truck(
     val model: String,
 ) : Vehicle()
 
+// new sealed class subtype
+data class Bicycle(
+    val name: String,
+    val year: Int,
+    val model: String,
+) : Vehicle()
+
 enum class Color {
     LE_MANS_BLUE,
     GT_SILVER,
     ZERMATT_SILVER,
     ZYKLAM_RED_PEARLEFFECT,
-    DRAGON_GREEN
+    DRAGON_GREEN,
+    TORNADO_RED // <== new enum value
 }
 

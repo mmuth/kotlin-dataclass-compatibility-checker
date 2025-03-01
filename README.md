@@ -21,6 +21,7 @@ Typical breaking changes are detected:
 - field types do not match
 - fields were removed
 - enum values were removed
+- sealed class members were removed
 
 e.g. validating
 <table>
@@ -91,8 +92,11 @@ You can alternatively check the tests in `src/test/resources` for more examples.
 
 ## Constraints
 
-Currently, exactly one kotlin main data class is supported for the validation. However, using other classes (referenced from the main class) in the
-to-be-validated class is supported, as long as everything is in one file :-).
+* Currently, exactly one kotlin main data class is supported for the validation. However, using other classes (referenced from the main class) in the
+  to-be-validated class is supported, as long as everything is in one file :-).
+* there is no support for nested classes yet. If you plan to use sealed classes to model something like `oneOf` just define it in an unnested style.
+
+You may also take a look at the [tests](./src/test/resources) to get an impression of the current use cases.
 
 ## Contributing
 

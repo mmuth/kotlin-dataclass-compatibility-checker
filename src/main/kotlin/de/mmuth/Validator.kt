@@ -4,7 +4,7 @@ typealias Violation = String
 
 class Validator {
 
-    fun check(inputClass: KotlinValidatableDataClassDescription, againstInputClass: KotlinValidatableDataClassDescription): Set<Violation> {
+    fun check(inputClass: KotlinValidatableClassDescription, againstInputClass: KotlinValidatableClassDescription): Set<Violation> {
         val violations = mutableSetOf<Violation>()
         if (againstInputClass.name != inputClass.name)
             violations.add("Main data class names do not match: '${inputClass.name}' vs. '${againstInputClass.name}'. Stopping.")
@@ -17,7 +17,7 @@ class Validator {
         return violations
     }
 
-    private fun validateMembers(inputClass: KotlinValidatableDataClassDescription, againstInputClass: KotlinValidatableDataClassDescription): Set<Violation> {
+    private fun validateMembers(inputClass: KotlinValidatableClassDescription, againstInputClass: KotlinValidatableClassDescription): Set<Violation> {
         val violations = mutableSetOf<Violation>()
         againstInputClass.members.forEach { member ->
             // all members need to exist in the input
@@ -42,30 +42,45 @@ class Validator {
     }
 
     private fun validateReferencedTypes(
-        inputClass: KotlinValidatableDataClassDescription,
-        againstInputClass: KotlinValidatableDataClassDescription
+        inputClass: KotlinValidatableClassDescription,
+        againstInputClass: KotlinValidatableClassDescription
     ): Set<Violation> {
         val violations = mutableSetOf<Violation>()
         val inputReferences = inputClass.getAllTypeReferences()
         val againstReferences = againstInputClass.getAllTypeReferences()
+        violations.addAll(validateSealedClassImplementations(inputClass, againstInputClass))
+
         againstReferences.forEach { typeToValidate ->
+            val inputType = inputReferences.firstOrNull { it.name == typeToValidate.name }
             when (typeToValidate) {
-                is KotlinValidatableDataClassDescription -> {
-                    val inputType = inputReferences.firstOrNull { it.name == typeToValidate.name }
+                is KotlinValidatableClassDescription -> {
                     if (inputType == null)
                         violations.add("Referenced type '${typeToValidate.name}' does not exist in input class")
-                    else
-                        violations.addAll(validateMembers(inputType as KotlinValidatableDataClassDescription, typeToValidate))
+                    else {
+                        violations.addAll(validateSealedClassImplementations(inputType as KotlinValidatableClassDescription, typeToValidate))
+                        violations.addAll(validateMembers(inputType, typeToValidate))
+                    }
                 }
 
                 is KotlinEnumDescripton -> {
-                    val inputType = inputReferences.firstOrNull { it.name == typeToValidate.name }
                     if (inputType == null)
                         violations.add("Referenced enum '${typeToValidate.name}' does not exist in input class")
                     else
                         violations.addAll(validateEnumValues(inputType as KotlinEnumDescripton, typeToValidate))
                 }
             }
+        }
+        return violations
+    }
+
+    private fun validateSealedClassImplementations(
+        inputClass: KotlinValidatableClassDescription,
+        againstInputClass: KotlinValidatableClassDescription
+    ): Set<Violation> {
+        val violations = mutableSetOf<Violation>()
+        againstInputClass.sealedClassImplementations.forEach { value ->
+            if (inputClass.sealedClassImplementations.none { it == value })
+                violations.add("Sealed class '${againstInputClass.name}': subclass '${value.name}' was removed")
         }
         return violations
     }
